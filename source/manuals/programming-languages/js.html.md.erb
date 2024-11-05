@@ -1,0 +1,310 @@
+---
+title: JavaScript coding style
+last_reviewed_on: 2024-09-13
+review_in: 12 months
+owner_slack: '#frontend'
+---
+
+# <%= current_page.data.title %>
+
+## Contents
+
+* [Linting](#linting)
+* [Whitespace](#whitespace)
+* [Naming conventions](#naming-conventions)
+* [CoffeeScript](#coffeescript)
+* [HTML class hooks](#html-class-hooks)
+* [Styling elements](#styling-elements)
+* [Strict mode](#strict-mode)
+* [Modules](#modules)
+* [Module structure](#module-structure)
+* [jQuery](#jquery)
+* [Supporting older browsers](#supporting-older-browsers)
+* [Method arguments](#method-arguments)
+
+## Linting
+
+As a base, we follow conventions established by the [standardjs][] project. 
+They allow us to be consistent about how we write code while reducing the time spend debating which linting rules to pick.
+
+Depending on their needs, projects may complement this initial set of rules with extra linting, for example:
+
+- other [ESLint][] plugins, like [es-x][] to check API compatibility with browsers your project supports
+- [Prettier][] to enforce further code formatting conventions
+
+You should be cautious to only amend the initial set of rules to resolve compatibility issues, and not as a means to adjust rules to individual preferences.
+
+**Why**: Linting ensures consistency in the codebase and picks up on well-known issues. Using an opinionated set of rules allows us to limit time spend picking rules, focusing instead on getting consistency, which is more important.
+
+[standardjs]: https://standardjs.com/
+[ESLint]: https://eslint.org/
+[es-x]: https://github.com/eslint-community/eslint-plugin-es-x
+[Prettier]: https://prettier.io/docs/en/cli.html
+
+### Tools
+
+#### StandardJS's command line interface
+
+If you're not looking to make any amends to the StandardJS conventions, you can use [StandardJS' `standard` command line interface][standard-cli] to lint files in your repository without extra set up.
+
+```
+npx standard
+```
+
+[standard-cli]: https://standardjs.com/#usage
+
+#### standardx
+
+If the StandardJS rule set conflicts with the browsers your project supports, you can use [standardx][] to amend which rules are running. 
+
+Once installed you can then override standard rules with an [`.eslintrc`][eslintrc] file or an `eslintConfig` entry in package.json ([example][govuk-warnings]).
+
+[standardx]: https://github.com/standard/standardx
+[eslintrc]: https://eslint.org/docs/v8.x/use/configure/configuration-files
+[govuk-warnings]: https://github.com/alphagov/govuk_publishing_components/commit/ea7f0becc76f73780b6cb33701bea9e58f15f91a
+
+#### ESLint
+
+ESLint is the most widely used JavaScript linter, and actually what StandardJS uses under the hood. 
+Using it directly allows you to benefit from other plugins in the ESLint ecosystem to complement standard conventions, 
+and keep up to date with newer rules, for example related to newer language features.
+
+Standard can be integrated by adding the `eslint-config-standard` to your ESLint configuration. 
+
+When adding extra ESLint plugins, most come with a `recommended` configuration that's worth using as a starter, rather than deciding on each rule individually. You can then add or remove rules as needs arise during the life of your project. In that area, automatically fixable rules are especially cheap to try out, as the tools will take care of updating your code for you.
+
+#### Prettier
+
+Prettier's only preoccupation is with [code formatting, not code quality][prettier-comparison]. 
+It can be used as a complement to ESLint for further automated formatting, with much more advanced decisions in terms of indentation, spaces, or line breaks.
+It runs as a separate command (`npx prettier`) and the [`eslint-config-prettier`][prettier-linters] ensures there'll be no conflicts between the rules of ESLint and the formatting of Prettier.
+
+[prettier-comparison]: https://prettier.io/docs/en/comparison
+[prettier-linters]: https://prettier.io/docs/en/integrating-with-linters
+
+### When to run linting
+
+#### On CI
+
+Running standard in CI ensures that all pull requests meet our code conventions before getting merged on the `main` branch.
+You should have this configured as part of your project.
+
+#### Through pre-commit Git hooks
+
+Waiting for CI to know if the code follows the convention can take a bit of time.
+A pre-commit Git hook allows to get quicker feedback, directly on developers' machines.
+Errors that are automatically fixable can be fixed at that stage without human intervention, reducing the effort of linting for developers.
+
+Tools like [Husky][] and [lint-staged][] can help consistently run linting before commit by respectively:
+
+- setting up the hooks when dependencies get installed
+- running linting on the files staged for commit and adding any fixes to the current commit
+
+[Husky]: https://typicode.github.io/husky/
+[lint-staged]: https://www.npmjs.com/package/lint-staged
+
+#### In editors
+
+To get even quicker feedback, editor plugins can highlight issues while editing files.
+They can correct automatically fixable errors on save, saving further development effort.
+
+Each of the tools previously listed has plugins to help integrate with editors:
+
+- [StandardJS editor plugins](https://standardjs.com/#are-there-text-editor-plugins)
+- [ESLint editor plugins](https://eslint.org/docs/latest/use/integrations#editors)
+- [Prettier editor plugins](https://prettier.io/docs/en/editors)
+
+## Whitespace
+
+Use soft tabs with a two space indent.
+
+If you're using [Prettier](#prettier), this will be set up for you. Otherwise, you may want to configure a [`.editorconfig` file][editorconfig] accordingly.
+
+**Why:** This follows the conventions used within our other projects.
+
+[editorconfig]: https://editorconfig.org/
+
+## Naming conventions
+
+Follow the following conventions when naming symbols in your JavaScript code.
+
+**Why:** The naming of objects in the code helps developers know how to interact with them. It also follows the conventions of the standard library.
+
+### Variables, functions and parameters
+
+Use [camelCase](http://eslint.org/docs/rules/camelcase) when naming variables, functions and parameters.
+
+  ```javascript
+  // Bad
+  const this_is_my_object = {}
+  const THISIsMyVariable = 'thing'
+  function ThisIsMyFunction(this_is_a_param) { ... }
+
+  // Good
+  const thisIsMyObject = {}
+  const thisIsMyVariable = 'thing'
+  function thisIsMyFunction(thisIsAParam) { ... }
+  ```
+
+### Classes and constructors
+
+Use PascalCase when naming classes or constructors.
+
+  ```javascript
+  // Bad
+  class user {
+    constructor(options) {
+    this.name = options.name
+  }
+  function profile(options) {
+    this.user = options.user
+  }
+  const Bob = new user({
+    name: 'Bob Parr'
+  })
+  const BobProfile = new profile({
+    user: Bob
+  })
+
+  // Good
+  class User {
+    constructor(options) {
+      this.name = options.name
+    }
+  }
+  function Profile(options) {
+    this.user = options.user
+  }
+  const bob = new User({
+    name: 'Bob Parr'
+  })
+  const bobProfile = new Profile({
+    user: bob
+  })
+  ```
+
+## HTML class hooks
+
+When attaching JavaScript to the DOM use a `.js-` prefix for the HTML classes.
+
+Eg `js-hidden` or `js-tab`.
+
+**Why:** This makes it completely transparent what the class is used for within the HTML. It also makes it much easier to search in a project to remove old behaviour.
+
+## Styling elements
+
+Do not apply styles directly inside JavaScript. You should only ever apply CSS classes and style from there.
+
+**Why:** This reduces the risk of clobbering user stylesheets and mixing concerns across different code bases. Also see [HTML class hooks](#html-class-hooks).
+
+## Strict mode
+
+You should add the `'use strict'` statement to the top of your module functions.
+
+**Why:** This enables [strict
+mode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions_and_function_scope/Strict_mode).
+
+Strict mode converts many mistakes, such as undefined variables, into errors which makes it easier to determine why things are not working. It also forces scope so you do not accidentally export globals.
+
+## Modules
+
+Avoid assigning modules to the `window` global scope.
+
+Bundlers such as [Rollup](https://rollupjs.org/) avoid the need to do this manually.
+
+To do this manually, wrap your code in a closure, then attach the module to the global scope with a namespace:
+
+```javascript
+;(function (global) {
+  'use strict'
+
+  var GOVUK = global.GOVUK || {}
+
+  ...
+
+  GOVUK.myModule = ...
+
+  ...
+
+  global.GOVUK = GOVUK
+})(window); // eslint-disable-line semi
+```
+
+**Why:** attaching to the `GOVUK` object keeps us from polluting the global namespace. Checking for or creating the `GOVUK` object means the module can be reused on any project (internal or external) without having to modify it. You get the benefits of [strict mode](#strict-mode) which include stopping your module from leaking variables into the global scope. The [IIFE](https://en.wikipedia.org/wiki/Immediately-invoked_function_expression) should be wrapped with semicolons to ensure no issues with concatenation can happen.
+
+## Module structure
+
+Module logic should be broken down into small testable functions. The functions should be exposed as methods on the module rather than hidden inside a closure.
+
+```javascript
+// Bad
+function myModule ($element) {
+  function showThing () { ... }
+  function hideThing () { ... }
+  function submitThing () { ... }
+  function getArgumentsForThing () { ... }
+
+  $element.addEventListener('click', submitThing)
+}
+
+// Good
+function MyModule ($element) {
+  $element.addEventListener('click', this.submitThing.bind(this))
+}
+MyModule.prototype.showThing = function () { ... }
+MyModule.prototype.hideThing = function () { ... }
+MyModule.prototype.submitThing = function () { ... }
+MyModule.prototype.getArgumentsForThing = function () { ... }
+
+// Good
+GOVUK.myModule = {
+  showThing: function () { ... },
+  hideThing: function () { ... },
+  submitThing: function () { ... },
+  getArgumentsForThing: function () { ... },
+  init: function ($element) {
+    $element.addEventListener('click', this.submitThing.bind(this))
+  }
+}
+```
+
+**Why:** Having small well named functions lets developers who are unfamiliar with the code understand what is going on faster. Having logic in small functions makes it easier to unit test each of those functions to prove they performs as expected. Having those functions exposed as methods on the module makes it possible to test those functions in isolation.
+
+## jQuery
+
+Avoid jQuery in new projects.
+
+In older projects put together a plan to migrate away from jQuery.
+
+**Why:** jQuery had been used to provide browser support for older browsers. However, browser support for ES5 JavaScript is now widespread enough that a library like jQuery is unnecessary. The older versions of jQuery that we use have security vulnerabilities and are no longer maintained by the jQuery team.
+
+## Supporting older browsers
+
+Use native web APIs where possible.
+
+Use [feature detection](https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Cross_browser_testing/Feature_detection) before [polyfilling](https://developer.mozilla.org/en-US/docs/Glossary/Polyfill), to support older browsers.
+
+## Method arguments
+
+Favour named arguments in a object over sequential arguments.
+
+```javascript
+// Bad
+function addAutoSubmitToInput (input, action, timeout, debug) { ... }
+
+// Good
+function addAutoSubmitToInput (input, options) {
+  var action = options.action,
+      timeout = options.timeout,
+      debug = options.debug
+  ...
+}
+```
+
+**Why:** by using named options you do not necessarily have to read the internals of the method being called to work out what the arguments mean.
+
+Given a call to `addAutoSubmitToInput($input, './search', 20, false)` you would have to go to that method to find out what `20` or `false` mean.
+
+A call to `addAutoSubmitToInput($input, { action: './search', timeout: 20, debug: false })` gives you context as to what the arguments mean. It also makes it easier to refactor arguments without having to change all method calls.
+
+[Connascence of naming is a weaker form of connascence than connascence of position](https://en.wikipedia.org/wiki/Connascence_%28computer_programming%29#Types_of_connascence).
